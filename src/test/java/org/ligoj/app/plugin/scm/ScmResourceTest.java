@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.ligoj.app.AbstractAppTest;
 import org.ligoj.app.model.Node;
+import org.ligoj.app.model.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
@@ -30,7 +31,7 @@ public class ScmResourceTest extends AbstractAppTest {
 
 	@BeforeEach
 	public void prepareData() throws IOException {
-		persistEntities("csv", new Class[] { Node.class }, StandardCharsets.UTF_8.name());
+		persistEntities("csv", new Class[] { Node.class, Parameter.class }, StandardCharsets.UTF_8.name());
 	}
 
 	@Test

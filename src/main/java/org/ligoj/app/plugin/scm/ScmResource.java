@@ -1,5 +1,10 @@
 package org.ligoj.app.plugin.scm;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.ligoj.app.model.Node;
+import org.ligoj.app.model.Parameter;
 import org.ligoj.app.resource.plugin.AbstractServicePlugin;
 import org.springframework.stereotype.Component;
 
@@ -29,4 +34,8 @@ public class ScmResource extends AbstractServicePlugin {
 		return SERVICE_KEY;
 	}
 
+	@Override
+	public List<Class<?>> getInstalledEntities() {
+		return Arrays.asList(Node.class, Parameter.class);
+	}
 }

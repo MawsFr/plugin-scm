@@ -1,0 +1,3 @@
+id;mandatory;mode;secured;type;owner.id
+service:scm:repository;true;CREATE;false;TEXT;service:scm
+service:scm:ldapgroups;true;CREATE;false;TEXT;service:scm

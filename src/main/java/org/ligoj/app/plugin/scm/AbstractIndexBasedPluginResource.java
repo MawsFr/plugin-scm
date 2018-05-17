@@ -47,6 +47,16 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	protected final String parameterRepository;
 
 	/**
+	 * Client name
+	 */
+	protected final String parameterOu;
+
+	/**
+	 * Project name
+	 */
+	protected final String parameterProject;
+
+	/**
 	 * User authentication.
 	 */
 	protected final String parameterUser;
@@ -57,8 +67,8 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	protected final String parameterPassword;
 
 	/**
-	 * Has index for parent path?. When undefined, the administration validation cannot be performed. The parameter
-	 * value should be a boolean.
+	 * Has index for parent path?. When undefined, the administration validation
+	 * cannot be performed. The parameter value should be a boolean.
 	 */
 	protected final String parameterIndex;
 
@@ -85,6 +95,8 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 		this.key = key;
 		this.parameterUrl = key + ":url";
 		this.parameterRepository = key + ":repository";
+		this.parameterOu = key + ":ou";
+		this.parameterProject = key + ":project";
 		this.parameterUser = key + ":user";
 		this.parameterPassword = key + ":password";
 		this.parameterIndex = key + ":index";

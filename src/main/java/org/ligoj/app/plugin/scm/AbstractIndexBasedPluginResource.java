@@ -18,6 +18,7 @@ import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.StringUtils;
 import org.ligoj.app.api.SubscriptionStatusWithData;
 import org.ligoj.app.resource.NormalizeFormat;
+import org.ligoj.app.resource.node.ParameterValueResource;
 import org.ligoj.app.resource.plugin.AbstractToolPluginResource;
 import org.ligoj.app.resource.plugin.AuthCurlProcessor;
 import org.ligoj.app.resource.plugin.CurlProcessor;
@@ -57,6 +58,11 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	protected final String parameterProject;
 
 	/**
+	 * Project name
+	 */
+	protected final String parameterLdapGroups;
+
+	/**
 	 * User authentication.
 	 */
 	protected final String parameterUser;
@@ -74,6 +80,9 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 
 	@Autowired
 	protected InMemoryPagination inMemoryPagination;
+
+	@Autowired
+	protected ParameterValueResource pvResource;
 
 	/**
 	 * Plug-in key.
@@ -97,6 +106,7 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 		this.parameterRepository = key + ":repository";
 		this.parameterOu = key + ":ou";
 		this.parameterProject = key + ":project";
+		this.parameterLdapGroups = key + ":ldapgroups";
 		this.parameterUser = key + ":user";
 		this.parameterPassword = key + ":password";
 		this.parameterIndex = key + ":index";

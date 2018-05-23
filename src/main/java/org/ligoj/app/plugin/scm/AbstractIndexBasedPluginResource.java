@@ -40,7 +40,7 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	/**
 	 * Base URL
 	 */
-	private final String parameterUrl;
+	protected final String parameterUrl;
 
 	/**
 	 * Repository fragment URL
@@ -73,8 +73,8 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	protected final String parameterPassword;
 
 	/**
-	 * Has index for parent path?. When undefined, the administration validation
-	 * cannot be performed. The parameter value should be a boolean.
+	 * Has index for parent path?. When undefined, the administration validation cannot be performed. The parameter
+	 * value should be a boolean.
 	 */
 	protected final String parameterIndex;
 
@@ -93,6 +93,8 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	 * Simple plug-in name, used for validation management.
 	 */
 	protected final String simpleName;
+
+	protected String createUrl;
 
 	/**
 	 * @param key

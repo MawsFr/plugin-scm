@@ -1,3 +1,5 @@
 id;mandatory;mode;secured;type;owner.id;data
+service:scm:ou;true;CREATE;false;TEXT;service:scm
+service:scm:project;false;CREATE;false;TEXT;service:scm
 service:scm:repository;true;CREATE;false;TEXT;service:scm
 service:scm:ldapgroups;true;CREATE;false;MULTIPLE;service:scm;[]

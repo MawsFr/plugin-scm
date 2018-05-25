@@ -254,4 +254,9 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 		return statusContent;
 	}
 
+	protected String toBashReadableArray(String jsonArray) {
+		return jsonArray.replaceAll("\",\"", " ").replaceAll("\\[\"", "(").replaceAll("\"\\]", ")")
+				.replaceAll("','", " ").replaceAll("\\['", "(").replaceAll("'\\]", ")");
+	}
+
 }

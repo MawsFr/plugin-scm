@@ -17,6 +17,8 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.StringUtils;
 import org.ligoj.app.api.SubscriptionStatusWithData;
+import org.ligoj.app.iam.IGroupRepository;
+import org.ligoj.app.iam.IamProvider;
 import org.ligoj.app.resource.NormalizeFormat;
 import org.ligoj.app.resource.node.ParameterValueResource;
 import org.ligoj.app.resource.plugin.AbstractToolPluginResource;
@@ -41,6 +43,11 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	 * Base URL
 	 */
 	protected final String parameterUrl;
+
+	/**
+	 * The proxy agent url
+	 */
+	protected final String parameterUrlProxyAgent;
 
 	/**
 	 * Repository fragment URL
@@ -84,6 +91,9 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	@Autowired
 	protected ParameterValueResource pvResource;
 
+	@Autowired
+	protected IamProvider[] iamProvider;
+
 	/**
 	 * Plug-in key.
 	 */
@@ -105,6 +115,7 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	protected AbstractIndexBasedPluginResource(final String key, final String simpleName) {
 		this.key = key;
 		this.parameterUrl = key + ":url";
+		this.parameterUrlProxyAgent = ":url-proxy-agent";
 		this.parameterRepository = key + ":repository";
 		this.parameterOu = key + ":ou";
 		this.parameterProject = key + ":project";
@@ -254,9 +265,12 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 		return statusContent;
 	}
 
-	protected String toBashReadableArray(String jsonArray) {
-		return jsonArray.replaceAll("\",\"", " ").replaceAll("\\[\"", "(").replaceAll("\"\\]", ")")
-				.replaceAll("','", " ").replaceAll("\\['", "(").replaceAll("'\\]", ")");
+	/**
+	 * Group repository provider.
+	 *
+	 * @return Group repository provider.
+	 */
+	protected IGroupRepository getGroup() {
+		return (IGroupRepository) iamProvider[0].getConfiguration().getGroupRepository();
 	}
-
 }

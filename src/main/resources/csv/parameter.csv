@@ -3,3 +3,4 @@ service:scm:ou;true;CREATE;false;TEXT;service:scm
 service:scm:project;false;CREATE;false;TEXT;service:scm
 service:scm:repository;true;CREATE;false;TEXT;service:scm
 service:scm:ldapgroups;true;CREATE;false;MULTIPLE;service:scm;[]
+service:scm:url-proxy-agent;true;ALL;false;TEXT;service:scm

@@ -4,4 +4,5 @@ define({
 	'service:scm:project': 'Projet',
 	'service:scm:ou': 'Organisation',
 	'service:scm:ldapgroups': 'Groupe(s) LDAP',
+	'service:scm:url-proxy-agent': 'URL de l\'agent proxy',
 });

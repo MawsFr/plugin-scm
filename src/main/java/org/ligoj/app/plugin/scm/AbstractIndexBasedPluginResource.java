@@ -115,11 +115,11 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	protected AbstractIndexBasedPluginResource(final String key, final String simpleName) {
 		this.key = key;
 		this.parameterUrl = key + ":url";
-		this.parameterUrlProxyAgent = ":url-proxy-agent";
+		this.parameterUrlProxyAgent = "service:scm:url-proxy-agent";
 		this.parameterRepository = key + ":repository";
-		this.parameterOu = key + ":ou";
-		this.parameterProject = key + ":project";
-		this.parameterLdapGroups = key + ":ldapgroups";
+		this.parameterOu = "service:scm:ou";
+		this.parameterProject = "service:scm:project";
+		this.parameterLdapGroups = "service:scm:ldapgroups";
 		this.parameterUser = key + ":user";
 		this.parameterPassword = key + ":password";
 		this.parameterIndex = key + ":index";

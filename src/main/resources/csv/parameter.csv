@@ -1,6 +1,10 @@
 id;mandatory;mode;secured;type;owner.id;data
+service:scm:user;true;ALL;true;TEXT;service:scm
+service:scm:password;true;ALL;true;TEXT;service:scm
+service:scm:index;false;ALL;false;BOOL;service:scm
 service:scm:ou;true;CREATE;false;TEXT;service:scm
 service:scm:project;false;CREATE;false;TEXT;service:scm
 service:scm:repository;true;CREATE;false;TEXT;service:scm
-service:scm:ldapgroups;true;CREATE;false;MULTIPLE;service:scm;[]
+service:scm:ldapgroups;true;CREATE;false;TEXT;service:scm;
 service:scm:url-proxy-agent;true;ALL;false;TEXT;service:scm
+service:scm:url;true;ALL;false;TEXT;service:scm

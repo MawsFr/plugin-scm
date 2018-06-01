@@ -13,6 +13,7 @@ import javax.ws.rs.HttpMethod;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.StringUtils;
@@ -20,6 +21,7 @@ import org.ligoj.app.api.SubscriptionStatusWithData;
 import org.ligoj.app.iam.IGroupRepository;
 import org.ligoj.app.iam.IamProvider;
 import org.ligoj.app.resource.NormalizeFormat;
+import org.ligoj.app.resource.node.ParameterResource;
 import org.ligoj.app.resource.node.ParameterValueResource;
 import org.ligoj.app.resource.plugin.AbstractToolPluginResource;
 import org.ligoj.app.resource.plugin.AuthCurlProcessor;
@@ -272,5 +274,73 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	 */
 	protected IGroupRepository getGroup() {
 		return (IGroupRepository) iamProvider[0].getConfiguration().getGroupRepository();
+	}
+
+	@Override
+	public void create(int subscription) throws Exception {
+		// Create the git repository
+		Map<String, String> parameters = pvResource.getSubscriptionParameters(subscription);
+		System.out.println(parameters.toString());
+
+		String tmp;
+
+		tmp = parameters.remove(parameterOu);
+		parameters.put("OU", tmp);
+
+		tmp = parameters.remove(parameterProject);
+		parameters.put("PROJECT", tmp);
+
+		tmp = parameters.remove(parameterLdapGroups);
+		String newGroupsArray = "";
+		final IGroupRepository repository = getGroup();
+		String[] groups = tmp.split(",");
+		for (final String group : groups) {
+			newGroupsArray = newGroupsArray.concat(repository.findById(group).getDn() + " ");
+		}
+		newGroupsArray = newGroupsArray.trim();
+
+		parameters.put("LDAP_GROUPS", newGroupsArray);
+
+		tmp = parameters.remove(parameterUrl);
+		parameters.put("URL", StringUtils.appendIfMissing(tmp, "/"));
+
+		tmp = parameters.remove(parameterUrlProxyAgent);
+		parameters.put("URL_PROXY_AGENT", StringUtils.appendIfMissing(tmp, "/"));
+
+		tmp = parameters.remove(parameterUser);
+		parameters.put("USER", tmp);
+
+		tmp = parameters.remove(parameterPassword);
+		parameters.put("PASSWORD", tmp);
+
+		ScriptContext context = new ScriptContext();
+		context.setScriptId(createUrl);
+		context.setArgs(parameters);
+		final CurlRequest request = new CurlRequest(HttpMethod.POST, parameters.get("URL_PROXY_AGENT"),
+				ParameterResource.toJSon(context), HttpHeaders.CONTENT_TYPE + ":" + MediaType.APPLICATION_JSON);
+		request.setSaveResponse(true);
+
+		// check if creation success
+		if (!newCurlProcessor(parameters).process(request)) {
+			request.setResponse("-1");
+		}
+		handleError(parameters, request);
+	}
+
+	protected void handleError(Map<String, String> parameters, CurlRequest request) {
+		int exitCode = Integer.valueOf(request.getResponse());
+		switch (exitCode) {
+		case -1:
+			throw new ValidationJsonException("The proxy agent doesn't reply");
+		case 0:
+			return;
+		case 7:
+			throw new ValidationJsonException("already-exist");
+		case 8:
+			throw new ValidationJsonException(parameterRepository, simpleName + "-repository",
+					parameters.get(parameterRepository));
+		default:
+			throw new ValidationJsonException("Global");
+		}
 	}
 }

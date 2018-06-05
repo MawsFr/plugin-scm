@@ -39,4 +39,10 @@ public class ScmResourceTest extends AbstractAppTest {
 		// Coverage only
 		Assertions.assertEquals("service:scm", resource.getKey());
 	}
+
+	@Test
+	public void getInstalledEntities() {
+		Assertions.assertArrayEquals(new Class<?>[] { Node.class, Parameter.class },
+				resource.getInstalledEntities().toArray());
+	}
 }

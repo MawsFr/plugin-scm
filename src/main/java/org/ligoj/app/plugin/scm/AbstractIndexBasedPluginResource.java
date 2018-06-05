@@ -77,6 +77,10 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	protected final String parameterUser;
 
 	/**
+	 * The secret key to be able to make ajax calls
+	 */
+	protected String parameterSecretKey;
+	/**
 	 * User password.
 	 */
 	protected final String parameterPassword;
@@ -125,6 +129,7 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 		this.parameterUser = ScmResource.SERVICE_KEY + ":user";
 		this.parameterPassword = ScmResource.SERVICE_KEY + ":password";
 		this.parameterIndex = ScmResource.SERVICE_KEY + ":index";
+		this.parameterSecretKey = ScmResource.SERVICE_KEY + ":secret-key";
 		this.simpleName = simpleName;
 	}
 
@@ -284,6 +289,7 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 
 		String tmp;
 
+		// TODO : Create constants
 		tmp = parameters.remove(parameterOu);
 		parameters.put("OU", tmp);
 
@@ -317,7 +323,8 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 		context.setScriptId(createUrl);
 		context.setArgs(parameters);
 		final CurlRequest request = new CurlRequest(HttpMethod.POST, parameters.get("URL_PROXY_AGENT"),
-				ParameterResource.toJSon(context), HttpHeaders.CONTENT_TYPE + ":" + MediaType.APPLICATION_JSON);
+				ParameterResource.toJSon(context), HttpHeaders.CONTENT_TYPE + ":" + MediaType.APPLICATION_JSON,
+				HttpHeaders.AUTHORIZATION + ":" + parameters.remove(parameterSecretKey));
 		request.setSaveResponse(true);
 
 		// check if creation success
@@ -326,6 +333,16 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 		}
 		handleError(parameters, request);
 	}
+
+	// TODO : implement
+	// public void formatParameterKeysToBashVariables(Map<String, String> parameters) {
+	// for (Map.Entry<String, String> entry : parameters.entrySet()) {
+	// String tmp = parameters.remove(entry.getKey());
+	// String key = entry.getKey();
+	// String newKey = key.substring(key.lastIndexOf(":")).replaceAll("-", "_").toUpperCase();
+	// parameters.put(newKey, tmp);
+	// }
+	// }
 
 	protected void handleError(Map<String, String> parameters, CurlRequest request) {
 		int exitCode = Integer.valueOf(request.getResponse());

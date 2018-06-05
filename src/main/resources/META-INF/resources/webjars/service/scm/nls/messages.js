@@ -10,6 +10,7 @@ define({
 		'service:scm:user': 'User',
 		'service:scm:password': 'Password',
 		'service:scm:index': 'Index',
+		'service:scm:secret-key': 'Secret key',
 		
 	},
 	fr: true

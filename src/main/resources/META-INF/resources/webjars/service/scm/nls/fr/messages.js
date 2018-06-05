@@ -9,4 +9,5 @@ define({
 	'service:scm:user': 'Utilisateur',
 	'service:scm:password': 'Mot de passe',
 	'service:scm:index': 'Index',
+	'service:scm:secret-key': 'Clé secrète',
 });

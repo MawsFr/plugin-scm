@@ -61,8 +61,11 @@ define(function () {
 		/**
 		 * Live validation of LDAP group, OU and parent.
 		 */
-		validateIdRepositoryCreateMode: function () {
+		validateIdRepositoryCreateMode: function (e) {
+			debugger;
 			validationManager.reset(_('service:scm:repository'));
+			var data = current.$super('formSubscriptionToJSON')(_('subscribe-parameters-container'));
+			var configuration = current.$super('parameterContext').configuration;
 			var $input = _('service:scm:repository');
 			var project = _('service:scm:project').val();
 			var organisation = _('service:scm:ou').val();
@@ -77,23 +80,23 @@ define(function () {
 			}
 			// Live validation to check the group does not exists
 			validationManager.addMessage($input, null, [], null, 'fas fa-sync-alt fa-spin');
-//			$.ajax({
-//				dataType: 'json',
-//				url: REST_PATH + 'service/id/group/' + encodeURIComponent(fullName) + '/exists',
-//				type: 'GET',
-//				success: function (data) {
-//					if (data) {
-//						// Existing project
-//						validationManager.addError(_('service:scm:git:group'), {
-//							rule: 'already-exist',
-//							parameters: ['service:scm:git:group', fullName]
-//						}, 'repository', true);
-//					} else {
-//						// Succeed, not existing project
-//						validationManager.addSuccess($input, [], null, true);
-//					}
-//				}
-//			});
+			$.ajax({
+				dataType: 'json',
+				url: REST_PATH + 'service/scm/' + configuration.type + '/' + configuration.node + '/' + encodeURIComponent(fullName) + '/exists',
+				type: 'GET',
+				success: function (data) {
+					if (data) {
+						// Existing project
+						validationManager.addError(_('service:scm:repository'), {
+							rule: 'already-exist',
+							parameters: ['service:scm:repository', fullName]
+						}, 'repository', true);
+					} else {
+						// Succeed, not existing repository
+						validationManager.addSuccess($input, [], null, true);
+					}
+				}
+			});
 
 			// For now return true for the immediate validation system, even if the Ajax call may fail
 			return true;

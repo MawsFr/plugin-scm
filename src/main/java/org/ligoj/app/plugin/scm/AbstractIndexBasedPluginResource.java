@@ -2,6 +2,7 @@ package org.ligoj.app.plugin.scm;
 
 import java.text.Format;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -20,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.ligoj.app.api.SubscriptionStatusWithData;
 import org.ligoj.app.iam.IGroupRepository;
 import org.ligoj.app.iam.IamProvider;
+import org.ligoj.app.model.Project;
+import org.ligoj.app.model.Subscription;
 import org.ligoj.app.resource.NormalizeFormat;
 import org.ligoj.app.resource.node.ParameterResource;
 import org.ligoj.app.resource.node.ParameterValueResource;
@@ -40,6 +43,8 @@ import org.springframework.data.domain.PageRequest;
  */
 @Produces(MediaType.APPLICATION_JSON)
 public abstract class AbstractIndexBasedPluginResource extends AbstractToolPluginResource {
+
+	public static final String HEADER_TOKEN = "token";
 
 	/**
 	 * Base URL
@@ -110,7 +115,15 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	 */
 	protected final String simpleName;
 
-	protected String createUrl;
+	/**
+	 * The name of the create script.
+	 */
+	protected String createScript;
+
+	/**
+	 * The name of the exists script.
+	 */
+	protected String existsScript;
 
 	/**
 	 * @param key
@@ -246,6 +259,32 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 				.collect(Collectors.toList()), PageRequest.of(0, 10)).getContent();
 	}
 
+	@GET
+	@Path("{node}/{fullName}/exists")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public boolean exists(@PathParam("node") final String node, @PathParam("fullName") final String fullName) {
+		final Map<String, String> parameters = pvResource.getNodeParameters(node);
+		final String url = parameters.get(parameterUrlProxyAgent);
+
+		final Map<String, String> params = new HashMap<>();
+		params.put("REPOSITORY", parameters.get(parameterRepository));
+		final ScriptContext context = new ScriptContext();
+		context.setScriptId(existsScript);
+		context.setArgs(params);
+		final CurlRequest request = new CurlRequest(HttpMethod.POST, url, ParameterResource.toJSon(context),
+				HttpHeaders.CONTENT_TYPE + ":" + MediaType.APPLICATION_JSON,
+				HEADER_TOKEN + ":" + parameters.remove(parameterSecretKey));
+		request.setSaveResponse(true);
+
+		// check if creation success
+		if (!newCurlProcessor(parameters).process(request)) {
+			request.setResponse("-1");
+		}
+
+		return handleExistenceError(parameters, request);
+
+	}
+
 	@Override
 	public boolean checkStatus(final Map<String, String> parameters) {
 		// Status is UP <=> Administration access is UP (if defined)
@@ -284,8 +323,9 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	@Override
 	public void create(int subscription) throws Exception {
 		// Create the git repository
-		Map<String, String> parameters = pvResource.getSubscriptionParameters(subscription);
-		System.out.println(parameters.toString());
+		final Map<String, String> parameters = pvResource.getSubscriptionParameters(subscription);
+
+		verifyParameterValid(parameters, subscription);
 
 		String tmp;
 
@@ -320,22 +360,57 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 		parameters.put("PASSWORD", tmp);
 
 		ScriptContext context = new ScriptContext();
-		context.setScriptId(createUrl);
+		context.setScriptId(createScript);
 		context.setArgs(parameters);
 		final CurlRequest request = new CurlRequest(HttpMethod.POST, parameters.get("URL_PROXY_AGENT"),
 				ParameterResource.toJSon(context), HttpHeaders.CONTENT_TYPE + ":" + MediaType.APPLICATION_JSON,
-				HttpHeaders.AUTHORIZATION + ":" + parameters.remove(parameterSecretKey));
+				HEADER_TOKEN + ":" + parameters.remove(parameterSecretKey));
 		request.setSaveResponse(true);
 
 		// check if creation success
 		if (!newCurlProcessor(parameters).process(request)) {
 			request.setResponse("-1");
 		}
-		handleError(parameters, request);
+		handleCreationError(parameters, request);
+	}
+
+	/**
+	 * Verifies that the parameters are valid after a subscription creation
+	 * 
+	 * @param parameters
+	 *            Parameters sent when creating the subscription
+	 * @param subscriptionId
+	 *            The id of the subscription
+	 */
+	protected void verifyParameterValid(final Map<String, String> parameters, final int subscriptionId) {
+		final String OU = parameters.get(parameterOu);
+		final String PROJECT = parameters.get(parameterProject);
+		final String URL = parameters.get(parameterUrl);
+		final String URL_PROXY_AGENT = parameters.get(parameterUrlProxyAgent);
+		final String LDAP_GROUPS = parameters.get(parameterLdapGroups);
+		final String USER = parameters.get(parameterUser);
+		final String PASSWORD = parameters.get(parameterPassword);
+		final String AUTH_SECRET_KEY = parameters.get(parameterSecretKey);
+
+		if (StringUtils.isBlank(OU) || StringUtils.isBlank(URL) || StringUtils.isBlank(URL_PROXY_AGENT)
+				|| StringUtils.isBlank(LDAP_GROUPS) || StringUtils.isBlank(USER) || StringUtils.isBlank(PASSWORD)
+				|| StringUtils.isBlank(AUTH_SECRET_KEY)) {
+			throw new ValidationJsonException("Complete all parameters");
+		}
+
+		final Subscription subscription = subscriptionRepository.findOne(subscriptionId);
+		final Project project = subscription.getProject();
+
+		if (!project.getName().equals(PROJECT)) {
+			throw new ValidationJsonException("Project invalid");
+		}
+
+		// TODO : Maybe verify that the ldap groups can be accessed by the user ?
+
 	}
 
 	// TODO : implement
-	// public void formatParameterKeysToBashVariables(Map<String, String> parameters) {
+	// protected void formatParameterKeysToBashVariables(Map<String, String> parameters) {
 	// for (Map.Entry<String, String> entry : parameters.entrySet()) {
 	// String tmp = parameters.remove(entry.getKey());
 	// String key = entry.getKey();
@@ -344,7 +419,15 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	// }
 	// }
 
-	protected void handleError(Map<String, String> parameters, CurlRequest request) {
+	/**
+	 * Handles the return code sent by the proxy agent
+	 * 
+	 * @param parameters
+	 *            The parameters of the subscription
+	 * @param request
+	 *            The request object
+	 */
+	protected void handleCreationError(final Map<String, String> parameters, final CurlRequest request) {
 		int exitCode = Integer.valueOf(request.getResponse());
 		switch (exitCode) {
 		case -1:
@@ -360,4 +443,20 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 			throw new ValidationJsonException("Global");
 		}
 	}
+
+	protected Boolean handleExistenceError(Map<String, String> parameters, CurlRequest request) {
+		int exitCode = Integer.valueOf(request.getResponse());
+		switch (exitCode) {
+		case -1:
+			throw new ValidationJsonException("The proxy agent doesn't reply");
+		case 0:
+			return null;
+		case 1:
+			return true;
+		default:
+			throw new ValidationJsonException("Global");
+		}
+
+	}
+
 }

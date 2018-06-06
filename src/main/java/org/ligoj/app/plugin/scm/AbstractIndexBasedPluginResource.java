@@ -267,7 +267,7 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 		final String url = parameters.get(parameterUrlProxyAgent);
 
 		final Map<String, String> params = new HashMap<>();
-		params.put("REPOSITORY", parameters.get(parameterRepository));
+		params.put("REPOSITORY", fullName);
 		final ScriptContext context = new ScriptContext();
 		context.setScriptId(existsScript);
 		context.setArgs(params);
@@ -444,13 +444,13 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 		}
 	}
 
-	protected Boolean handleExistenceError(Map<String, String> parameters, CurlRequest request) {
+	protected boolean handleExistenceError(Map<String, String> parameters, CurlRequest request) {
 		int exitCode = Integer.valueOf(request.getResponse());
 		switch (exitCode) {
 		case -1:
 			throw new ValidationJsonException("The proxy agent doesn't reply");
 		case 0:
-			return null;
+			return false;
 		case 1:
 			return true;
 		default:

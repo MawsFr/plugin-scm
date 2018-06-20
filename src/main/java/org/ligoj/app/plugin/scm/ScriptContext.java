@@ -17,6 +17,6 @@ public class ScriptContext {
 	/**
 	 * The arguments to pass to the script as environment variables
 	 */
-	private Map<String, String> args;
+	private Map<String, String> parameters;
 
 }

@@ -32,6 +32,7 @@ import org.ligoj.app.resource.plugin.CurlProcessor;
 import org.ligoj.app.resource.plugin.CurlRequest;
 import org.ligoj.bootstrap.core.NamedBean;
 import org.ligoj.bootstrap.core.json.InMemoryPagination;
+import org.ligoj.bootstrap.core.resource.BusinessException;
 import org.ligoj.bootstrap.core.validation.ValidationJsonException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -259,24 +260,32 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 				.collect(Collectors.toList()), PageRequest.of(0, 10)).getContent();
 	}
 
+	/**
+	 * Verifies if a repository exists
+	 * 
+	 * @param node
+	 *            The SCM node to get the url of the proxy agent of.
+	 * @param fullName
+	 *            The full name of the repository to check.
+	 * @return True if exists
+	 */
 	@GET
 	@Path("{node}/{fullName}/exists")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public boolean exists(@PathParam("node") final String node, @PathParam("fullName") final String fullName) {
 		final Map<String, String> parameters = pvResource.getNodeParameters(node);
-		final String url = parameters.get(parameterUrlProxyAgent);
 
 		final Map<String, String> params = new HashMap<>();
 		params.put("REPOSITORY", fullName);
 		final ScriptContext context = new ScriptContext();
 		context.setScriptId(existsScript);
-		context.setArgs(params);
-		final CurlRequest request = new CurlRequest(HttpMethod.POST, url, ParameterResource.toJSon(context),
-				HttpHeaders.CONTENT_TYPE + ":" + MediaType.APPLICATION_JSON,
+		context.setParameters(params);
+		final CurlRequest request = new CurlRequest(HttpMethod.POST, parameters.get(parameterUrlProxyAgent),
+				ParameterResource.toJSon(context), HttpHeaders.CONTENT_TYPE + ":" + MediaType.APPLICATION_JSON,
 				HEADER_TOKEN + ":" + parameters.remove(parameterSecretKey));
 		request.setSaveResponse(true);
 
-		// check if creation success
+		// check if exists
 		if (!newCurlProcessor(parameters).process(request)) {
 			request.setResponse("-1");
 		}
@@ -317,11 +326,11 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	 * @return Group repository provider.
 	 */
 	protected IGroupRepository getGroup() {
-		return (IGroupRepository) iamProvider[0].getConfiguration().getGroupRepository();
+		return iamProvider[0].getConfiguration().getGroupRepository();
 	}
 
 	@Override
-	public void create(int subscription) throws Exception {
+	public void create(final int subscription) throws Exception {
 		// Create the git repository
 		final Map<String, String> parameters = pvResource.getSubscriptionParameters(subscription);
 
@@ -339,7 +348,7 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 		tmp = parameters.remove(parameterLdapGroups);
 		String newGroupsArray = "";
 		final IGroupRepository repository = getGroup();
-		String[] groups = tmp.split(",");
+		final String[] groups = tmp.split(",");
 		for (final String group : groups) {
 			newGroupsArray = newGroupsArray.concat(repository.findById(group).getDn() + " ");
 		}
@@ -359,9 +368,9 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 		tmp = parameters.remove(parameterPassword);
 		parameters.put("PASSWORD", tmp);
 
-		ScriptContext context = new ScriptContext();
+		final ScriptContext context = new ScriptContext();
 		context.setScriptId(createScript);
-		context.setArgs(parameters);
+		context.setParameters(parameters);
 		final CurlRequest request = new CurlRequest(HttpMethod.POST, parameters.get("URL_PROXY_AGENT"),
 				ParameterResource.toJSon(context), HttpHeaders.CONTENT_TYPE + ":" + MediaType.APPLICATION_JSON,
 				HEADER_TOKEN + ":" + parameters.remove(parameterSecretKey));
@@ -401,7 +410,7 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 		final Subscription subscription = subscriptionRepository.findOne(subscriptionId);
 		final Project project = subscription.getProject();
 
-		if (!project.getName().equals(PROJECT)) {
+		if (!project.getPkey().equals(OU)) {
 			throw new ValidationJsonException("Project invalid");
 		}
 
@@ -428,10 +437,10 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 	 *            The request object
 	 */
 	protected void handleCreationError(final Map<String, String> parameters, final CurlRequest request) {
-		int exitCode = Integer.valueOf(request.getResponse());
+		final int exitCode = Integer.valueOf(request.getResponse());
 		switch (exitCode) {
 		case -1:
-			throw new ValidationJsonException("The proxy agent doesn't reply");
+			throw new BusinessException("The proxy agent doesn't reply");
 		case 0:
 			return;
 		case 7:
@@ -444,8 +453,8 @@ public abstract class AbstractIndexBasedPluginResource extends AbstractToolPlugi
 		}
 	}
 
-	protected boolean handleExistenceError(Map<String, String> parameters, CurlRequest request) {
-		int exitCode = Integer.valueOf(request.getResponse());
+	protected boolean handleExistenceError(final Map<String, String> parameters, final CurlRequest request) {
+		final int exitCode = Integer.valueOf(request.getResponse());
 		switch (exitCode) {
 		case -1:
 			throw new ValidationJsonException("The proxy agent doesn't reply");
